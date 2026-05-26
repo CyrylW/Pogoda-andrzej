@@ -39,7 +39,6 @@
 
     <script>
         async function fetchWeather() {
-            // URL dla Gdańska i Warszawy z Open-Meteo (dane na żywo)
             const urlGdansk = "https://api.open-meteo.com/v1/forecast?latitude=54.35&longitude=18.64&current=temperature_2m,precipitation,wind_speed_10m";
             const urlWarsaw = "https://api.open-meteo.com/v1/forecast?latitude=52.23&longitude=21.01&current=temperature_2m,precipitation,wind_speed_10m";
 
@@ -51,14 +50,59 @@
                 const gdansk = dataGdansk.current;
                 const warsaw = dataWarsaw.current;
 
-                // --- LOGIKA TEMPERATURY ---
-                updateUI('temp', warsaw.temperature_2m, gdansk.temperature_2m, 'stopni', 'cieplej', 'Gdańsk: ' + gdansk.temperature_2m + '°C | Warszawa: ' + warsaw.temperature_2m + '°C');
+                // --- 1. LOGIKA TEMPERATURY (Im mniej, tym zimniej/gorzej) ---
+                const diffTemp = Math.abs((warsaw.temperature_2m - gdansk.temperature_2m).toFixed(1));
+                let tempEmoji, tempText;
                 
-                // --- LOGIKA WIATRU ---
-                updateUI('wind', warsaw.wind_speed_10m, gdansk.wind_speed_10m, 'km/h', 'bardziej wietrznie', 'Gdańsk: ' + gdansk.wind_speed_10m + ' km/h | Warszawa: ' + warsaw.wind_speed_10m + ' km/h');
-                
-                // --- LOGIKA OPADÓW ---
-                updateUI('rain', warsaw.precipitation, gdansk.precipitation, 'mm', 'mocniej pada', 'Gdańsk: ' + gdansk.precipitation + ' mm | Warszawa: ' + warsaw.precipitation + ' mm');
+                if (warsaw.temperature_2m > gdansk.temperature_2m) {
+                    tempEmoji = "😢";
+                    tempText = `U Andrzeja jest cieplej o ${diffTemp} stopni`;
+                } else if (warsaw.temperature_2m === gdansk.temperature_2m) {
+                    tempEmoji = "😐";
+                    tempText = "Andrzej ma tak samo";
+                } else {
+                    tempEmoji = "😃";
+                    tempText = "Andrzej ma gorzej";
+                }
+                document.getElementById('temp-emoji').innerText = tempEmoji;
+                document.getElementById('temp-text').innerText = tempText;
+                document.getElementById('temp-details').innerText = `Gdańsk: ${gdansk.temperature_2m}°C | Warszawa: ${warsaw.temperature_2m}°C`;
+
+                // --- 2. LOGIKA WIATRU (Im więcej wieje, tym gorzej) ---
+                const diffWind = Math.abs((warsaw.wind_speed_10m - gdansk.wind_speed_10m).toFixed(1));
+                let windEmoji, windText;
+
+                if (warsaw.wind_speed_10m > gdansk.wind_speed_10m) {
+                    windEmoji = "😃"; // W Wawie wieje mocniej -> Andrzej ma gorzej -> cieszymy się
+                    windText = "Andrzej ma gorzej";
+                } else if (warsaw.wind_speed_10m === gdansk.wind_speed_10m) {
+                    windEmoji = "😐";
+                    windText = "Andrzej ma tak samo";
+                } else {
+                    windEmoji = "😢"; // W Wawie wieje mniej -> Andrzej ma lepiej -> płaczemy
+                    windText = `U Andrzeja wieje mniej o ${diffWind} km/h`;
+                }
+                document.getElementById('wind-emoji').innerText = windEmoji;
+                document.getElementById('wind-text').innerText = windText;
+                document.getElementById('wind-details').innerText = `Gdańsk: ${gdansk.wind_speed_10m} km/h | Warszawa: ${warsaw.wind_speed_10m} km/h`;
+
+                // --- 3. LOGIKA OPADÓW (Im więcej pada, tym gorzej) ---
+                const diffRain = Math.abs((warsaw.precipitation - gdansk.precipitation).toFixed(1));
+                let rainEmoji, rainText;
+
+                if (warsaw.precipitation > gdansk.precipitation) {
+                    rainEmoji = "😃"; // W Wawie pada mocniej -> Andrzej ma gorzej -> cieszymy się
+                    rainText = "Andrzej ma gorzej";
+                } else if (warsaw.precipitation === gdansk.precipitation) {
+                    rainEmoji = "😐";
+                    rainText = "Andrzej ma tak samo";
+                } else {
+                    rainEmoji = "😢"; // W Wawie pada mniej -> Andrzej ma lepiej -> płaczemy
+                    rainText = `U Andrzeja mniej pada o ${diffRain} mm`;
+                }
+                document.getElementById('rain-emoji').innerText = rainEmoji;
+                document.getElementById('rain-text').innerText = rainText;
+                document.getElementById('rain-details').innerText = `Gdańsk: ${gdansk.precipitation} mm | Warszawa: ${warsaw.precipitation} mm`;
 
             } catch (error) {
                 console.error("Błąd pobierania danych", error);
@@ -66,30 +110,6 @@
             }
         }
 
-        // Główna funkcja porównująca i ustawiająca teksty
-        function updateUI(id, valWarsaw, valGdansk, unit, actionWord, detailsText) {
-            const diff = Math.abs((valWarsaw - valGdansk).toFixed(1));
-            
-            let emoji = "";
-            let text = "";
-
-            if (valWarsaw > valGdansk) {
-                emoji = "😢";
-                text = `U Andrzeja jest ${actionWord} o ${diff} ${unit}`;
-            } else if (valWarsaw === valGdansk) {
-                emoji = "😐";
-                text = "Andrzej ma tak samo";
-            } else {
-                emoji = "😃";
-                text = "Andrzej ma gorzej";
-            }
-
-            document.getElementById(`${id}-emoji`).innerText = emoji;
-            document.getElementById(`${id}-text`).innerText = text;
-            document.getElementById(`${id}-details`).innerText = detailsText;
-        }
-
-        // Uruchom pobieranie po załadowaniu strony
         fetchWeather();
     </script>
 
