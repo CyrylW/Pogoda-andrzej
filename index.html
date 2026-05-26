@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pogoda u Andrzeja</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background-color: #f0f0f0; }
+        .card { background: white; padding: 20px; border-radius: 10px; margin: 10px auto; max-width: 400px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .emoji { font-size: 50px; margin: 10px 0; }
+        .title { font-size: 20px; font-weight: bold; color: #333; }
+        .details { font-size: 14px; color: #666; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <h2>Raport: Gdańsk vs Warszawa</h2>
+
+    <div class="card" id="temp-card">
+        <div class="title">Temperatura</div>
+        <div class="details" id="temp-details">Ładowanie...</div>
+        <div class="emoji" id="temp-emoji">⏳</div>
+        <div id="temp-text">Sprawdzam...</div>
+    </div>
+
+    <div class="card" id="wind-card">
+        <div class="title">Wiatr</div>
+        <div class="details" id="wind-details">Ładowanie...</div>
+        <div class="emoji" id="wind-emoji">⏳</div>
+        <div id="wind-text">Sprawdzam...</div>
+    </div>
+
+    <div class="card" id="rain-card">
+        <div class="title">Opady (Deszcz)</div>
+        <div class="details" id="rain-details">Ładowanie...</div>
+        <div class="emoji" id="rain-emoji">⏳</div>
+        <div id="rain-text">Sprawdzam...</div>
+    </div>
+
+    <script>
+        async function fetchWeather() {
+            // URL dla Gdańska i Warszawy z Open-Meteo (dane na żywo)
+            const urlGdansk = "https://api.open-meteo.com/v1/forecast?latitude=54.35&longitude=18.64&current=temperature_2m,precipitation,wind_speed_10m";
+            const urlWarsaw = "https://api.open-meteo.com/v1/forecast?latitude=52.23&longitude=21.01&current=temperature_2m,precipitation,wind_speed_10m";
+
+            try {
+                const [resGdansk, resWarsaw] = await Promise.all([fetch(urlGdansk), fetch(urlWarsaw)]);
+                const dataGdansk = await resGdansk.json();
+                const dataWarsaw = await resWarsaw.json();
+
+                const gdansk = dataGdansk.current;
+                const warsaw = dataWarsaw.current;
+
+                // --- LOGIKA TEMPERATURY ---
+                updateUI('temp', warsaw.temperature_2m, gdansk.temperature_2m, 'stopni', 'cieplej', 'Gdańsk: ' + gdansk.temperature_2m + '°C | Warszawa: ' + warsaw.temperature_2m + '°C');
+                
+                // --- LOGIKA WIATRU ---
+                updateUI('wind', warsaw.wind_speed_10m, gdansk.wind_speed_10m, 'km/h', 'bardziej wietrznie', 'Gdańsk: ' + gdansk.wind_speed_10m + ' km/h | Warszawa: ' + warsaw.wind_speed_10m + ' km/h');
+                
+                // --- LOGIKA OPADÓW ---
+                updateUI('rain', warsaw.precipitation, gdansk.precipitation, 'mm', 'mocniej pada', 'Gdańsk: ' + gdansk.precipitation + ' mm | Warszawa: ' + warsaw.precipitation + ' mm');
+
+            } catch (error) {
+                console.error("Błąd pobierania danych", error);
+                document.getElementById('temp-text').innerText = "Błąd połączenia";
+            }
+        }
+
+        // Główna funkcja porównująca i ustawiająca teksty
+        function updateUI(id, valWarsaw, valGdansk, unit, actionWord, detailsText) {
+            const diff = Math.abs((valWarsaw - valGdansk).toFixed(1));
+            
+            let emoji = "";
+            let text = "";
+
+            if (valWarsaw > valGdansk) {
+                emoji = "😢";
+                text = `U Andrzeja jest ${actionWord} o ${diff} ${unit}`;
+            } else if (valWarsaw === valGdansk) {
+                emoji = "😐";
+                text = "Andrzej ma tak samo";
+            } else {
+                emoji = "😃";
+                text = "Andrzej ma gorzej";
+            }
+
+            document.getElementById(`${id}-emoji`).innerText = emoji;
+            document.getElementById(`${id}-text`).innerText = text;
+            document.getElementById(`${id}-details`).innerText = detailsText;
+        }
+
+        // Uruchom pobieranie po załadowaniu strony
+        fetchWeather();
+    </script>
+
+</body>
+</html>
